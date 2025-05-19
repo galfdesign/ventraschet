@@ -421,4 +421,81 @@ input:checked + .slider:before {
     font-size: 14px;
     vertical-align: middle;
     user-select: none;
+}
+
+@media (max-width: 600px) {
+    .calculator {
+        max-width: 100vw;
+        padding: 6px 2px;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    .calc-header h1 {
+        font-size: 13px;
+        padding: 0 2px;
+    }
+    .input-group {
+        padding: 4px;
+        margin-bottom: 6px;
+    }
+    .input-group label {
+        font-size: 11px;
+        margin-bottom: 2px;
+    }
+    .input-group input[type="number"] {
+        font-size: 13px;
+        padding: 4px;
+        min-width: 0;
+        width: 48px;
+    }
+    .input-group input[type="range"] {
+        min-width: 0;
+        width: 100%;
+        height: 28px;
+        margin: 0 2px;
+    }
+    .switch {
+        width: 38px;
+        height: 22px;
+    }
+    .slider:before {
+        height: 16px;
+        width: 16px;
+        left: 2.5px;
+        bottom: 2.5px;
+    }
+    .switch-label {
+        font-size: 12px;
+        margin-left: 7px;
+    }
+    .results {
+        padding: 6px;
+        margin-top: 8px;
+        border-radius: 8px;
+    }
+    .result-item {
+        font-size: 13px;
+        padding: 6px;
+        margin-bottom: 6px;
+    }
+    .annotation-bottom {
+        margin-top: 10px;
+    }
+    .annotation-btn {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        min-height: 32px;
+        max-width: 32px;
+        max-height: 32px;
+        font-size: 18px;
+    }
+    .modal-content {
+        max-width: 98vw;
+        padding: 16px 4px 12px 4px;
+    }
+    .formula-card {
+        font-size: 12px;
+        padding: 8px;
+    }
 } 
