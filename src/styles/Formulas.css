@@ -1,0 +1,79 @@
+.formulas {
+    font-family: 'Roboto', sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.formulas h1 {
+    color: var(--main-blue);
+    font-size: 20px;
+    margin-bottom: 20px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.formula-card {
+    background: var(--input-bg);
+    border-radius: 11px;
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+.formula-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.formula-title {
+    color: var(--main-blue);
+    font-size: 16px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.formula-card p {
+    color: var(--label);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 8px 0;
+}
+
+.formula-card ul {
+    color: var(--label);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.formula-card li {
+    margin-bottom: 5px;
+}
+
+@media (max-width: 768px) {
+    .formulas {
+        padding: 15px;
+    }
+
+    .formulas h1 {
+        font-size: 18px;
+    }
+
+    .formula-card {
+        padding: 12px;
+    }
+
+    .formula-title {
+        font-size: 15px;
+    }
+
+    .formula-card p,
+    .formula-card ul {
+        font-size: 13px;
+    }
+} 

@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Расчет затрат на подогрев приточного воздуха</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .results {
+            margin-top: 30px;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 4px;
+            display: none;
+        }
+        .result-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #e8f4fc;
+            border-radius: 4px;
+        }
+        .monthly-results {
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+        }
+        .scrollable-table {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .summary {
+            font-weight: bold;
+            background-color: #e1f5fe;
+        }
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+            color: black;
+            width: auto;
+            margin: 0;
+            border-radius: 0;
+        }
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        .tab button.active {
+            background-color: #3498db;
+            color: white;
+        }
+        .tabcontent {
+            display: none;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+        }
+        .formula {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin: 15px 0;
+            font-family: monospace;
+        }
+        .formula-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .nav-buttons button {
+            width: 48%;
+        }
+    </style>
+</head>
+<body>
+    <div class="tab">
+        <button class="tablinks active" onclick="openTab(event, 'calculator')">Калькулятор</button>
+        <button class="tablinks" onclick="openTab(event, 'formulas')">Формулы расчета</button>
+    </div>
+
+    <div id="calculator" class="tabcontent" style="display: block;">
+        <h1>Расчет затрат на подогрев приточного воздуха</h1>
+        
+        <div class="input-group">
+            <label for="airVolume">Объем воздуха (м³/час):</label>
+            <input type="number" id="airVolume" min="0" step="1" value="100">
+        </div>
+        
+        <div class="input-group">
+            <label for="targetTemp">Температура нагрева (°C):</label>
+            <input type="number" id="targetTemp" min="-50" max="50" step="0.1" value="20">
+        </div>
+        
+        <div class="input-group">
+            <label for="recuperatorEfficiency">КПД рекуператора (%):</label>
+            <input type="number" id="recuperatorEfficiency" min="0" max="100" step="1" value="70">
+        </div>
+        
+        <div class="input-group">
+            <label for="city">Город:</label>
+            <select id="city">
+                {cityData.map(city => (
+                    <option key={city.id} value={city.id}>{city.name}</option>
+                ))}
+            </select>
+        </div>
+        
+        <button onclick="calculate()">Рассчитать</button>
+        
+        <div id="results" class="results">
+            <h2>Результаты расчета для <span id="cityName"></span></h2>
+            
+            <div class="result-item">
+                <strong>Температура холодной пятидневки:</strong>
+                <div id="coldTemp"></div>
+            </div>
+            
+            <div class="result-item">
+                <strong>Целевая температура нагрева:</strong>
+                <div id="targetTempDisplay"></div>
+            </div>
+            
+            <div class="result-item">
+                <strong>Затраты на подогрев за счет электричества:</strong>
+                <div id="electricCost"></div>
+            </div>
+            
+            <div class="result-item">
+                <strong>Затраты на подогрев за счет газа:</strong>
+                <div id="gasCost"></div>
+            </div>
+            
+            <div class="result-item">
+                <strong>Затраты на подогрев за счет электричества с рекуператором:</strong>
+                <div id="electricRecuperatorCost"></div>
+            </div>
+            
+            <div class="result-item">
+                <strong>Затраты на подогрев за счет газа с рекуператором:</strong>
+                <div id="gasRecuperatorCost"></div>
+            </div>
+            
+            <div class="monthly-results">
+                <h3>Помесячный расчет</h3>
+                <div class="scrollable-table">
+                    <table id="monthlyTable">
+                        <thead>
+                            <tr>
+                                <th>Месяц</th>
+                                <th>Температура (°C)</th>
+                                <th>Электричество (руб)</th>
+                                <th>Газ (руб)</th>
+                                <th>Эл. с рекуп. (руб)</th>
+                                <th>Газ с рекуп. (руб)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthlyTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="formulas" class="tabcontent">
+        <h1>Формулы расчета</h1>
+        
+        <div class="formula">
+            <div class="formula-title">1. Расчет необходимой энергии для нагрева воздуха</div>
+            Q = V × ρ × c × ΔT × t
+            <p>Где:</p>
+            <ul>
+                <li>Q - необходимая энергия (кВт·ч)</li>
+                <li>V - объем воздуха (м³/час)</li>
+                <li>ρ - плотность воздуха (принимаем 1.2 кг/м³)</li>
+                <li>c - удельная теплоемкость воздуха (0.00028 кВт·ч/(кг·°C))</li>
+                <li>ΔT - разница температур (целевая температура - наружная температура)</li>
+                <li>t - время работы (часы)</li>
+            </ul>
+            <p>Упрощенная формула: Q = V × 0.00034 × ΔT × t</p>
+        </div>
+        
+        <div class="formula">
+            <div class="formula-title">2. Расчет стоимости нагрева электричеством</div>
+            Стоимость = Q × Цена_электричества
+            <p>Где:</p>
+            <ul>
+                <li>Цена_электричества = 5 руб/кВт·ч</li>
+            </ul>
+        </div>
+        
+        <div class="formula">
+            <div class="formula-title">3. Расчет стоимости нагрева газом</div>
+            Стоимость = Q × Цена_газа
+            <p>Где:</p>
+            <ul>
+                <li>Цена_газа = 0.82 руб/кВт·ч</li>
+            </ul>
+        </div>
+        
+        <div class="formula">
+            <div class="formula-title">4. Расчет с учетом рекуператора</div>
+            Q<sub>рекуп</sub> = Q × (1 - η)
+            <p>Где:</p>
+            <ul>
+                <li>η - КПД рекуператора (в долях единицы)</li>
+            </ul>
+            <p>Затем стоимость рассчитывается по тем же формулам, но с Q<sub>рекуп</sub></p>
+        </div>
+        
+        <div class="formula">
+            <div class="formula-title">5. Расчет для каждого месяца</div>
+            <p>Для каждого месяца отопительного периода:</p>
+            <ol>
+                <li>Определяется среднемесячная температура</li>
+                <li>Вычисляется ΔT = Целевая_температура - Среднемесячная_температура</li>
+                <li>Рассчитывается Q для месяца (30 дней × 24 часа = 720 часов)</li>
+                <li>Вычисляются стоимости для всех вариантов</li>
+                <li>Результаты суммируются за весь отопительный период</li>
+            </ol>
+        </div>
+        
+        <div class="nav-buttons">
+            <button onclick="openTab(event, 'calculator')">Вернуться к калькулятору</button>
+        </div>
+    </div>
+
+    <script>
+        // Данные по городам (среднемесячные температуры и температура холодной пятидневки)
+        const cityDataObj = {
+            spb: {
+                id: "spb",
+                name: "Санкт-Петербург",
+                coldFiveDaysTemp: -24,
+                monthlyTemps: {
+                    "Сентябрь": 11.4,
+                    "Октябрь": 5.7,
+                    "Ноябрь": 0.2,
+                    "Декабрь": -3.9,
+                    "Январь": -6.6,
+                    "Февраль": -6.3,
+                    "Март": -1.5,
+                    "Апрель": 4.5
+                }
+            },
+            msk: {
+                id: "msk",
+                name: "Москва",
+                coldFiveDaysTemp: -26,
+                monthlyTemps: {
+                    "Сентябрь": 10.5,
+                    "Октябрь": 4.7,
+                    "Ноябрь": -1.3,
+                    "Декабрь": -6.0,
+                    "Январь": -8.8,
+                    "Февраль": -8.0,
+                    "Март": -2.2,
+                    "Апрель": 5.7
+                }
+            },
+            krd: {
+                id: "krd",
+                name: "Краснодар",
+                coldFiveDaysTemp: -15,
+                monthlyTemps: {
+                    "Сентябрь": 18.1,
+                    "Октябрь": 11.9,
+                    "Ноябрь": 6.3,
+                    "Декабрь": 2.0,
+                    "Январь": -0.2,
+                    "Февраль": 1.0,
+                    "Март": 5.4,
+                    "Апрель": 12.2
+                }
+            },
+            ekb: {
+                id: "ekb",
+                name: "Екатеринбург",
+                coldFiveDaysTemp: -32,
+                monthlyTemps: {
+                    "Сентябрь": 9.9,
+                    "Октябрь": 2.5,
+                    "Ноябрь": -5.5,
+                    "Декабрь": -11.2,
+                    "Январь": -13.7,
+                    "Февраль": -11.9,
+                    "Март": -4.1,
+                    "Апрель": 4.5
+                }
+            },
+            nsk: {
+                id: "nsk",
+                name: "Новосибирск",
+                coldFiveDaysTemp: -37,
+                monthlyTemps: {
+                    "Сентябрь": 10.2,
+                    "Октябрь": 2.8,
+                    "Ноябрь": -7.3,
+                    "Декабрь": -14.7,
+                    "Январь": -17.7,
+                    "Февраль": -16.2,
+                    "Март": -8.2,
+                    "Апрель": 2.6
+                }
+            },
+            kzn: {
+                id: "kzn",
+                name: "Казань",
+                coldFiveDaysTemp: -29,
+                monthlyTemps: {
+                    "Сентябрь": 11.5,
+                    "Октябрь": 4.2,
+                    "Ноябрь": -3.2,
+                    "Декабрь": -8.9,
+                    "Январь": -11.6,
+                    "Февраль": -10.9,
+                    "Март": -4.3,
+                    "Апрель": 5.3
+                }
+            },
+            vbg: {
+                id: "vbg",
+                name: "Волгоград",
+                coldFiveDaysTemp: -22,
+                monthlyTemps: {
+                    "Сентябрь": 16.3,
+                    "Октябрь": 8.3,
+                    "Ноябрь": 1.1,
+                    "Декабрь": -4.4,
+                    "Январь": -6.9,
+                    "Февраль": -6.5,
+                    "Март": -0.3,
+                    "Апрель": 10.0
+                }
+            },
+            smr: {
+                id: "smr",
+                name: "Самара",
+                coldFiveDaysTemp: -27,
+                monthlyTemps: {
+                    "Сентябрь": 13.3,
+                    "Октябрь": 5.4,
+                    "Ноябрь": -2.1,
+                    "Декабрь": -8.3,
+                    "Январь": -11.2,
+                    "Февраль": -10.6,
+                    "Март": -3.7,
+                    "Апрель": 7.1
+                }
+            },
+            rnd: {
+                id: "rnd",
+                name: "Ростов-на-Дону",
+                coldFiveDaysTemp: -18,
+                monthlyTemps: {
+                    "Сентябрь": 16.6,
+                    "Октябрь": 9.6,
+                    "Ноябрь": 3.3,
+                    "Декабрь": -1.5,
+                    "Январь": -3.8,
+                    "Февраль": -2.9,
+                    "Март": 2.2,
+                    "Апрель": 10.8
+                }
+            },
+            ufa: {
+                id: "ufa",
+                name: "Уфа",
+                coldFiveDaysTemp: -33,
+                monthlyTemps: {
+                    "Сентябрь": 11.3,
+                    "Октябрь": 3.9,
+                    "Ноябрь": -3.9,
+                    "Декабрь": -10.8,
+                    "Январь": -13.8,
+                    "Февраль": -12.8,
+                    "Март": -5.3,
+                    "Апрель": 5.3
+                }
+            },
+            krs: {
+                id: "krs",
+                name: "Красноярск",
+                coldFiveDaysTemp: -37,
+                monthlyTemps: {
+                    "Сентябрь": 8.9,
+                    "Октябрь": 1.5,
+                    "Ноябрь": -7.5,
+                    "Декабрь": -13.7,
+                    "Январь": -16.0,
+                    "Февраль": -14.0,
+                    "Март": -6.3,
+                    "Апрель": 1.9
+                }
+            },
+            vld: {
+                id: "vld",
+                name: "Владивосток",
+                coldFiveDaysTemp: -22,
+                monthlyTemps: {
+                    "Сентябрь": 15.8,
+                    "Октябрь": 8.8,
+                    "Ноябрь": -0.9,
+                    "Декабрь": -9.5,
+                    "Январь": -12.6,
+                    "Февраль": -9.1,
+                    "Март": -2.1,
+                    "Апрель": 4.8
+                }
+            },
+            irk: {
+                id: "irk",
+                name: "Иркутск",
+                coldFiveDaysTemp: -33,
+                monthlyTemps: {
+                    "Сентябрь": 9.1,
+                    "Октябрь": 1.6,
+                    "Ноябрь": -7.9,
+                    "Декабрь": -15.7,
+                    "Январь": -18.4,
+                    "Февраль": -15.5,
+                    "Март": -6.9,
+                    "Апрель": 2.4
+                }
+            },
+            khm: {
+                id: "khm",
+                name: "Хабаровск",
+                coldFiveDaysTemp: -29,
+                monthlyTemps: {
+                    "Сентябрь": 13.6,
+                    "Октябрь": 4.9,
+                    "Ноябрь": -7.2,
+                    "Декабрь": -17.7,
+                    "Январь": -20.3,
+                    "Февраль": -16.0,
+                    "Март": -6.7,
+                    "Апрель": 4.5
+                }
+            },
+            mrm: {
+                id: "mrm",
+                name: "Мурманск",
+                coldFiveDaysTemp: -28,
+                monthlyTemps: {
+                    "Сентябрь": 6.8,
+                    "Октябрь": 0.9,
+                    "Ноябрь": -4.9,
+                    "Декабрь": -8.2,
+                    "Январь": -10.5,
+                    "Февраль": -10.4,
+                    "Март": -5.8,
+                    "Апрель": -1.3
+                }
+            },
+            arh: {
+                id: "arh",
+                name: "Архангельск",
+                coldFiveDaysTemp: -34,
+                monthlyTemps: {
+                    "Сентябрь": 8.0,
+                    "Октябрь": 1.8,
+                    "Ноябрь": -4.8,
+                    "Декабрь": -9.9,
+                    "Январь": -13.6,
+                    "Февраль": -12.1,
+                    "Март": -5.7,
+                    "Апрель": 0.1
+                }
+            },
+            soc: {
+                id: "soc",
+                name: "Сочи",
+                coldFiveDaysTemp: -3,
+                monthlyTemps: {
+                    "Сентябрь": 19.8,
+                    "Октябрь": 15.6,
+                    "Ноябрь": 11.4,
+                    "Декабрь": 7.9,
+                    "Январь": 6.0,
+                    "Февраль": 6.2,
+                    "Март": 8.3,
+                    "Апрель": 12.2
+                }
+            },
+            klg: {
+                id: "klg",
+                name: "Калининград",
+                coldFiveDaysTemp: -18,
+                monthlyTemps: {
+                    "Сентябрь": 12.9,
+                    "Октябрь": 8.3,
+                    "Ноябрь": 3.4,
+                    "Декабрь": -0.4,
+                    "Январь": -2.2,
+                    "Февраль": -1.7,
+                    "Март": 1.7,
+                    "Апрель": 6.7
+                }
+            }
+        };
+
+        // Преобразуем объект в массив
+        export const cityData = Object.values(cityDataObj);
+
+        // Константы
+        const airHeatCapacity = 0.00034; // кВт·ч для нагрева 1 м³ воздуха на 1°C
+        const electricPrice = 5; // руб/кВт·ч
+        const gasPrice = 1.0; // руб/кВт·ч
+
+        function calculate() {
+            // Получаем входные данные
+            const airVolume = parseFloat(document.getElementById('airVolume').value);
+            const targetTemp = parseFloat(document.getElementById('targetTemp').value);
+            const recuperatorEfficiency = parseFloat(document.getElementById('recuperatorEfficiency').value) / 100;
+            const city = document.getElementById('city').value;
+            
+            // Получаем данные по выбранному городу
+            const cityInfo = cityData.find(c => c.id === city);
+            
+            // Устанавливаем название города и целевую температуру
+            document.getElementById('cityName').textContent = cityInfo.name;
+            document.getElementById('coldTemp').textContent = `${cityInfo.coldFiveDaysTemp}°C`;
+            document.getElementById('targetTempDisplay').textContent = `${targetTemp}°C`;
+            
+            // Рассчитываем общие затраты
+            let totalElectric = 0;
+            let totalGas = 0;
+            let totalElectricRecup = 0;
+            let totalGasRecup = 0;
+            
+            // Очищаем таблицу
+            const monthlyTableBody = document.getElementById('monthlyTableBody');
+            monthlyTableBody.innerHTML = '';
+            
+            // Рассчитываем для каждого месяца
+            for (const [month, temp] of Object.entries(cityInfo.monthlyTemps)) {
+                const deltaT = targetTemp - temp;
+                const hoursInMonth = 30 * 24; // Приблизительно
+                
+                // Расчет без рекуператора
+                const energyNeeded = airVolume * deltaT * airHeatCapacity * hoursInMonth;
+                const electricCost = energyNeeded * electricPrice;
+                const gasCost = energyNeeded * gasPrice;
+                
+                // Расчет с рекуператором
+                const energyNeededRecup = energyNeeded * (1 - recuperatorEfficiency);
+                const electricRecupCost = energyNeededRecup * electricPrice;
+                const gasRecupCost = energyNeededRecup * gasPrice;
+                
+                // Добавляем к общим суммам
+                totalElectric += electricCost;
+                totalGas += gasCost;
+                totalElectricRecup += electricRecupCost;
+                totalGasRecup += gasRecupCost;
+                
+                // Добавляем строку в таблицу
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${month}</td>
+                    <td>${temp.toFixed(1)}</td>
+                    <td>${electricCost.toFixed(0)}</td>
+                    <td>${gasCost.toFixed(0)}</td>
+                    <td>${electricRecupCost.toFixed(0)}</td>
+                    <td>${gasRecupCost.toFixed(0)}</td>
+                `;
+                monthlyTableBody.appendChild(row);
+            }
+            
+            // Добавляем итоговую строку
+            const summaryRow = document.createElement('tr');
+            summaryRow.className = 'summary';
+            summaryRow.innerHTML = `
+                <td><strong>Итого за сезон</strong></td>
+                <td></td>
+                <td><strong>${totalElectric.toFixed(0)}</strong></td>
+                <td><strong>${totalGas.toFixed(0)}</strong></td>
+                <td><strong>${totalElectricRecup.toFixed(0)}</strong></td>
+                <td><strong>${totalGasRecup.toFixed(0)}</strong></td>
+            `;
+            monthlyTableBody.appendChild(summaryRow);
+            
+            // Выводим результаты
+            document.getElementById('electricCost').textContent = `${totalElectric.toFixed(0)} руб за отопительный период`;
+            document.getElementById('gasCost').textContent = `${totalGas.toFixed(0)} руб за отопительный период`;
+            document.getElementById('electricRecuperatorCost').textContent = `${totalElectricRecup.toFixed(0)} руб за отопительный период (экономия ${(totalElectric - totalElectricRecup).toFixed(0)} руб)`;
+            document.getElementById('gasRecuperatorCost').textContent = `${totalGasRecup.toFixed(0)} руб за отопительный период (экономия ${(totalGas - totalGasRecup).toFixed(0)} руб)`;
+            
+            // Показываем результаты
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script>
+</body>
+</html> 

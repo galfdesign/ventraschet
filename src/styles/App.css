@@ -1,0 +1,70 @@
+.app {
+    font-family: 'Roboto', sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    background: var(--main-bg);
+}
+
+.tab {
+    overflow: hidden;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.tab button {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    transition: all 0.3s ease;
+    color: var(--label);
+    font-size: 16px;
+    cursor: pointer;
+    position: relative;
+}
+
+.tab button:hover {
+    color: var(--main-blue);
+}
+
+.tab button.active {
+    color: var(--main-blue);
+    font-weight: 600;
+}
+
+.tab button.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--main-blue);
+}
+
+.tabcontent {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+}
+
+@media (max-width: 768px) {
+    .app {
+        padding: 10px;
+    }
+
+    .tab button {
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+
+    .tabcontent {
+        padding: 15px;
+    }
+} 
