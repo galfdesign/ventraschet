@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/ventraschet/static/css/main.f10ea3cf.css",
+    "main.js": "/ventraschet/static/js/main.d3ad1765.js",
+    "index.html": "/ventraschet/index.html",
+    "main.f10ea3cf.css.map": "/ventraschet/static/css/main.f10ea3cf.css.map",
+    "main.d3ad1765.js.map": "/ventraschet/static/js/main.d3ad1765.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f10ea3cf.css",
+    "static/js/main.d3ad1765.js"
+  ]
+}
